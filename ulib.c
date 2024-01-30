@@ -125,3 +125,17 @@ int thread_join()
   int x = join(&stackPtr);
   return x;
 }
+
+int lock_init(lock_t *lk)
+{
+  lk->flag = 0;
+  return 0;
+}
+
+void lock_acquire(lock_t *lk){
+  while(xchg(&lk->flag, 1) != 0);
+}
+
+void lock_release(lock_t *lk){
+	xchg(&lk->flag, 0);
+}
