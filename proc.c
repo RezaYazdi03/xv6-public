@@ -266,6 +266,46 @@ clone(void* stack)
   return np->pid;
 }
 
+int
+join(void** stack)
+{
+  struct proc *p;
+  int havekids, pid;
+  struct proc *cp = myproc();
+  acquire(&ptable.lock);
+  while(1)
+  {
+    havekids = 0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    {
+      if(p->parent != cp || p->pgdir != p->parent->pgdir)
+        continue;
+      havekids = 1;
+      if(p->state == ZOMBIE)
+      {
+        pid = p->pid;
+        kfree(p->kstack);
+        p->kstack = 0;
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        p->state = UNUSED;
+        stack = p->threadstack;
+        p->threadstack = 0;
+        release(&ptable.lock);
+        return pid;
+      }
+    }
+    if(!havekids || cp->killed)
+    {
+      release(&ptable.lock);
+      return -1;
+    }
+    sleep(cp, &ptable.lock);
+  }
+}
+
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait() to find out it exited.
