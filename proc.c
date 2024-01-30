@@ -221,6 +221,51 @@ fork(void)
   return pid;
 }
 
+int 
+clone(void* stack)
+{
+  struct proc *np;
+  struct proc *p = myproc();
+
+  // Allocate process.
+  if((np = allocproc()) == 0)
+    return -1;
+
+  // Copy process data to the new thread
+  np->pgdir = p->pgdir;
+  np->sz = p->sz;
+  np->parent = p;
+  *np->tf = *p->tf;
+
+  // Put address of new stack in the stack pointer (ESP)
+  np->tf->esp = (uint) stack;
+
+  // Save address of stack
+  np->threadstack = stack;
+
+  // Initialize stack pointer to appropriate address
+  np->tf->ebp = np->tf->esp;
+
+  // Clear %eax so that clone returns 0 in the child.
+  np->tf->eax = 0;
+
+  int i;
+  for(i = 0; i < NOFILE; i++)
+    if(p->ofile[i])
+      np->ofile[i] = filedup(p->ofile[i]);
+  np->cwd = idup(p->cwd);
+
+  safestrcpy(np->name, p->name, sizeof(p->name));
+ 
+  acquire(&ptable.lock);
+
+  np->state = RUNNABLE;
+
+  release(&ptable.lock);
+
+  return np->pid;
+}
+
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait() to find out it exited.
