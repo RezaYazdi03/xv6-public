@@ -112,8 +112,10 @@ int thread_create(void (*start_routine)(void *, void *), void* arg1, void* arg2)
   stack = malloc(PGSIZE);
   int tid = clone(stack);
   if(tid == 0)
+  {
     start_routine(arg1,arg2);
     exit();
+  }
   return tid;
 }
 
