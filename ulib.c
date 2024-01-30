@@ -110,6 +110,9 @@ int thread_create(void (*start_routine)(void *, void *), void* arg1, void* arg2)
 {
   void* stack;
   stack = malloc(PGSIZE);
+  if (stack == 0)
+    return -1;
+
   int tid = clone(stack);
   if(tid == 0)
   {
@@ -121,8 +124,10 @@ int thread_create(void (*start_routine)(void *, void *), void* arg1, void* arg2)
 
 int thread_join()
 {
-  void * stackPtr;
+  void *stackPtr;
   int x = join(&stackPtr);
+  if (x > 0)
+    free(stackPtr);
   return x;
 }
 

@@ -237,14 +237,18 @@ clone(void* stack)
   np->parent = p;
   *np->tf = *p->tf;
 
-  // Put address of new stack in the stack pointer (ESP)
-  np->tf->esp = (uint) stack;
+  // Copy current stack for new thread
+  void *down_copy = (void*) p->tf->ebp + 16;
+  void *top_copy = (void*) p->tf->esp;
+  uint copysize = down_copy - top_copy;
+  memmove(stack + PGSIZE - copysize, top_copy, copysize);
+
+  // Initialize stack pointer to appropriate address
+  np->tf->esp = (uint)(stack + PGSIZE - copysize);
+  np->tf->ebp = (uint)(stack + PGSIZE - 16);
 
   // Save address of stack
   np->threadstack = stack;
-
-  // Initialize stack pointer to appropriate address
-  np->tf->ebp = np->tf->esp;
 
   // Clear %eax so that clone returns 0 in the child.
   np->tf->eax = 0;
@@ -291,7 +295,8 @@ join(void** stack)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
-        stack = p->threadstack;
+        if (stack)
+          stack = p->threadstack;
         p->threadstack = 0;
         release(&ptable.lock);
         return pid;
