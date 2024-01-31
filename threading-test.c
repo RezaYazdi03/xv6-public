@@ -34,14 +34,6 @@ void fn_wrapper(void *_x, void *_y) {
 
 int main () {
     lock_init(lk);
-    int *v0 = malloc(sizeof(int));
-    *v0 = 0;
-    int *v1 = malloc(sizeof(int));
-    *v1 = 1;
-    int *v2 = malloc(sizeof(int));
-    *v2 = 2;
-    int *v3 = malloc(sizeof(int));
-    *v3 = 3;
     
     // no threading.
     fn(1, 0);
@@ -64,18 +56,20 @@ int main () {
     fn(3, 0);
 
 
+    int v0 = 0, v1 = 1, v2 = 2;
     // threading using wrapper functions (high level) (without lock. its mess)
-    thread_create(&fn_wrapper, (void *)v1, (void *)v0);
-    thread_create(&fn_wrapper, (void *)v2, (void *)v0);
+    thread_create(&fn_wrapper, (void *)&v1, (void *)&v0);
+    thread_create(&fn_wrapper, (void *)&v2, (void *)&v0);
     thread_join();
     thread_join();
 
 
     // threading using wrapper functions (high level) and loock for printer
-    thread_create(&fn_wrapper, (void *)v1, (void *)v1);
-    thread_create(&fn_wrapper, (void *)v2, (void *)v1);
+    thread_create(&fn_wrapper, (void *)&v1, (void *)&v1);
+    thread_create(&fn_wrapper, (void *)&v2, (void *)&v1);
     thread_join();
     thread_join();
+
 
 
     exit();

@@ -238,14 +238,12 @@ clone(void* stack)
   *np->tf = *p->tf;
 
   // Copy current stack for new thread
-  void *down_copy = (void*) p->tf->ebp + 32;
-  void *top_copy = (void*) p->tf->esp;
-  uint copysize = down_copy - top_copy;
-  memmove(stack + PGSIZE - copysize, top_copy, copysize);
+  void *page_begin = (void*) (p->tf->esp & (-PGSIZE));
+  memmove(stack, page_begin, PGSIZE);
 
   // Initialize stack pointer to appropriate address
-  np->tf->esp = (uint)(stack + PGSIZE - copysize);
-  np->tf->ebp = (uint)(stack + PGSIZE - 32);
+  np->tf->esp = (p->tf->esp & (PGSIZE - 1)) + (int)stack;
+  np->tf->ebp = (p->tf->ebp & (PGSIZE - 1)) + (int)stack;
 
   // Save address of stack
   np->threadstack = stack;
