@@ -3,20 +3,49 @@
 
 lock_t* lk;
 
-void fn(int x) {
+void fn(int x, int y) {
+    // printf(1, "--%d %d--\n", x, y);
+
+    if (y) lock_acquire(lk);
     printf(1, "fn %d 1\n", x);
-    sleep(100);
+    if (y) lock_release(lk);
+
+    if (y) lock_acquire(lk);
     printf(1, "fn %d 2\n", x);
-    sleep(100);
+    if (y) lock_release(lk);
+
+    if (y) lock_acquire(lk);
     printf(1, "fn %d 3\n", x);
+    if (y) lock_release(lk);
+
+    if (y) lock_acquire(lk);
+    printf(1, "fn %d 4\n", x);
+    if (y) lock_release(lk);
+
+    if (y) lock_acquire(lk);
+    printf(1, "fn %d 5\n", x);
+    if (y) lock_release(lk);
+}
+
+void fn_wrapper(void *_x, void *_y) {
+    // printf(1, "%d %d %d %d\n", _x, _x, *(int*)_x, *(int*)_y);
+    fn(*(int *)_x, *(int *)_y);
 }
 
 int main () {
     lock_init(lk);
+    int *v0 = malloc(sizeof(int));
+    *v0 = 0;
+    int *v1 = malloc(sizeof(int));
+    *v1 = 1;
+    int *v2 = malloc(sizeof(int));
+    *v2 = 2;
+    int *v3 = malloc(sizeof(int));
+    *v3 = 3;
     
     // no threading.
-    fn(1);
-    fn(2);
+    fn(1, 0);
+    fn(2, 0);
     
     
     // threading using system call (low level)
@@ -26,14 +55,27 @@ int main () {
     int tid = clone(stack);
     if(tid == 0)
     {
-        fn(1);
+        fn(1, 0);
         exit();
     }
-    fn(2);
+    fn(2, 0);
     join(0);
+    free(stack); // manually prevent memory leak
+    fn(3, 0);
 
 
-    // threading using functions (high level)
+    // threading using wrapper functions (high level) (without lock. its mess)
+    thread_create(&fn_wrapper, (void *)v1, (void *)v0);
+    thread_create(&fn_wrapper, (void *)v2, (void *)v0);
+    thread_join();
+    thread_join();
+
+
+    // threading using wrapper functions (high level) and loock for printer
+    thread_create(&fn_wrapper, (void *)v1, (void *)v1);
+    thread_create(&fn_wrapper, (void *)v2, (void *)v1);
+    thread_join();
+    thread_join();
 
 
     exit();

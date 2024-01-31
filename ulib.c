@@ -116,7 +116,7 @@ int thread_create(void (*start_routine)(void *, void *), void* arg1, void* arg2)
   int tid = clone(stack);
   if(tid == 0)
   {
-    start_routine(arg1,arg2);
+    start_routine(arg1, arg2);
     exit();
   }
   return tid;
@@ -124,11 +124,7 @@ int thread_create(void (*start_routine)(void *, void *), void* arg1, void* arg2)
 
 int thread_join()
 {
-  void *stackPtr;
-  int x = join(&stackPtr);
-  if (x > 0)
-    free(stackPtr);
-  return x;
+  return join(0);
 }
 
 int lock_init(lock_t *lk)
